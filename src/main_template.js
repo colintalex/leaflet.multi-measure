@@ -1,4 +1,4 @@
-function controlTemplate(model) {
+function mainTemplate(model) {
   const title = "2D Measure Tool";
   return `
     <a class="measure-toggle" href="#">
@@ -6,24 +6,47 @@ function controlTemplate(model) {
     </a>
     <div class='leaflet-multi-measure-controls'>
       <h3 class="heading">2D Measure Tool</h3>
-      <div class="buttons">
-        <ul>
-          <li id='start-point' class='link'>
-            ${pointIcon()}
-            Point Measurement
-          </li>
-          <li id='start-line' class='link'>
-            ${polylineIcon()}
-            Line Measurement
-          </li>
-          <li id='start-area' class='link'>
-            ${polygonIcon()}
-            Area Measurement
-          </li>
-        </ul>
+        ${startMenu()}
+      <div class="measure-output">
+        <h5>{output}</h5>
+      </div>
+      <div class="measure-actions">
+        ${measureActions()}
       </div>
     </div>
   `;
+}
+
+function measureActions() {
+  return `
+    <ul>
+      <li id='save' class='link'>
+        Save Measurement
+      </li>
+      <li id='cancel' class='link'>
+        Cancel
+      </li>
+    </ul>`;
+}
+
+function startMenu() {
+  return `
+    <div class="measure-start-menu">
+    <ul>
+      <li id='start-point' class='link'>
+        ${pointIcon()}
+        Point Measurement
+      </li>
+      <li id='start-line' class='link'>
+        ${polylineIcon()}
+        Line Measurement
+      </li>
+      <li id='start-area' class='link'>
+        ${polygonIcon()}
+        Area Measurement
+      </li>
+    </ul>
+  </div>`;
 }
 
 function rulerIcon() {

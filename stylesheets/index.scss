@@ -9,6 +9,34 @@
     fill: black;
   }
 
+  ul {
+    padding-left: 0;
+    margin-bottom: 5px;
+  }
+
+  .measure-actions {
+    border-top: 1px solid lightgray;
+
+    ul {
+      color: blue;
+    }
+  }
+
+  li.link {
+    list-style: none;
+    font-size: 14px;
+    margin-bottom: 6px;
+
+    &:hover {
+      cursor: pointer;
+      color: blueviolet;
+
+      .leaflet-measure-menu-icon {
+        fill: blueviolet;
+      }
+    }
+  }
+
   .leaflet-multi-measure-controls {
     padding: 10px 5px;
 
@@ -18,30 +46,10 @@
       margin: 1px 8px 10px 9px;
     }
 
-    .buttons {
+    .measure-start-menu {
       font-size: 20px;
       // border-top: 1px solid lightgray;
       margin: 1px 8px 0px 9px;
-
-      ul {
-        padding-left: 0;
-        margin-bottom: 5px;
-
-        li.link {
-          list-style: none;
-          font-size: 14px;
-          margin-bottom: 6px;
-
-          &:hover {
-            cursor: pointer;
-            color: blueviolet;
-
-            .leaflet-measure-menu-icon {
-              fill: blueviolet;
-            }
-          }
-        }
-      }
     }
   }
 }
