@@ -1,0 +1,47 @@
+.leaflet-control-multi-measure {
+  background-color: #fff;
+  cursor: grab;
+
+
+  .leaflet-measure-menu-icon {
+    height: 22px;
+    width: 22px;
+    fill: black;
+  }
+
+  .leaflet-multi-measure-controls {
+    padding: 10px 5px;
+
+    h3.heading {
+      font-size: 18px;
+      border-bottom: 1px solid lightgray;
+      margin: 1px 8px 10px 9px;
+    }
+
+    .buttons {
+      font-size: 20px;
+      // border-top: 1px solid lightgray;
+      margin: 1px 8px 0px 9px;
+
+      ul {
+        padding-left: 0;
+        margin-bottom: 5px;
+
+        li.link {
+          list-style: none;
+          font-size: 14px;
+          margin-bottom: 6px;
+
+          &:hover {
+            cursor: pointer;
+            color: blueviolet;
+
+            .leaflet-measure-menu-icon {
+              fill: blueviolet;
+            }
+          }
+        }
+      }
+    }
+  }
+}
