@@ -1,3 +1,5 @@
+//= require leaflet
+
 L.Control.MultiMeasure = L.Control.extend({
   _className: "leaflet-control-multi-measure",
   options: {
@@ -12,6 +14,7 @@ L.Control.MultiMeasure = L.Control.extend({
     this._map = map;
     this._layer = L.featureGroup().addTo(this._map);
     this._tempLayer = L.featureGroup().addTo(this._layer);
+    this._tempPoints = L.featureGroup().addTo(this._layer);
     this._layerHistory = [];
 
     const container = (this._container = L.DomUtil.create(
@@ -145,8 +148,10 @@ L.Control.MultiMeasure = L.Control.extend({
     this._handleEditControls();
 
     this._subcursor.off("click", this._placeMarker, this);
+    this._subcursor.off("click", this._placeLinePoint, this);
     this._map.off("mousemove", this._updateSubCursorPos, this);
     this._tempLayer.clearLayers();
+    this._tempPoints.clearLayers();
   },
   _startPoint: function () {
     this._subcursor = L.circleMarker(this._map.getCenter()).addTo(this._layer);
@@ -179,14 +184,19 @@ L.Control.MultiMeasure = L.Control.extend({
   },
   _placeLinePoint: function (evt) {
     if (!this._tempLine) {
-      this._tempLine = new L.Polyline([evt.latlng]).addTo(this._tempLayer);
-    } else {
-      this._tempLine.addLatLng(evt.latlng);
+      this._tempLine = new L.Polyline([evt.latlng]);
     }
-    L.circleMarker(evt.latlng).addTo(this._tempLayer);
-    var line = turf.lineString(this._tempLine.toGeoJSON().geometry.coordinates);
-    var length = turf.length(line, { units: "miles" });
-    this._outputs.innerHTML = resultsTemplate(length);
+    if (!this._tempLayer.hasLayer(this._tempLine)) {
+      this._tempLine.addTo(this._tempLayer);
+    }
+    this._tempLine.addLatLng(evt.latlng);
+    L.circleMarker(evt.latlng).addTo(this._tempPoints);
+    var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
+    if (line_parts.length > 1) {
+      var line = turf.lineString(line_parts);
+      var length = turf.length(line, { units: "miles" });
+      this._outputs.innerHTML = resultsTemplate(length);
+    }
 
     // this._tempLine.addTo(this._tempLayer);
     // this._tempLine.setLatLng(evt.latlng);
@@ -202,9 +212,16 @@ L.Control.MultiMeasure = L.Control.extend({
         this._tempLayer.clearLayers();
         break;
       case "start-line":
-        this._tempLayer.getLayers().forEach((lyr) => {
-          debugger;
+        var path = L.featureGroup();
+        this._tempPoints.getLayers().forEach((lyr) => {
+          L.circleMarker(lyr.getLatLng(), { color: "green" }).addTo(path);
         });
+
+        L.polyline(this._tempLine.getLatLngs(), { color: "green" }).addTo(path);
+        path.addTo(this._layer);
+        this._layerHistory.push(path._leaflet_id);
+        this._tempPoints.clearLayers();
+        this._tempLine.setLatLngs([]);
         break;
       case "start-area":
         break;
