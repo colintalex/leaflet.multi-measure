@@ -8,13 +8,17 @@ function mainTemplate(model) {
       <h3 class="heading">2D Measure Tool</h3>
         ${startMenu()}
       <div class="measure-output">
-        <h5>{output}</h5>
       </div>
       <div class="measure-actions">
         ${measureActions()}
       </div>
     </div>
   `;
+}
+
+function resultsTemplate(model) {
+  return `
+  ${model.toString()}`;
 }
 
 function measureActions() {
@@ -44,6 +48,14 @@ function startMenu() {
       <li id='start-area' class='link'>
         ${polygonIcon()}
         Area Measurement
+      </li>
+      <li id='undo-last' class='link existing'>
+        ${polygonIcon()}
+        Undo Last
+      </li>
+      <li id='delete-all' class='link existing'>
+        ${polygonIcon()}
+        Clear All
       </li>
     </ul>
   </div>`;
