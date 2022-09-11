@@ -16,9 +16,15 @@ function mainTemplate(model) {
   `;
 }
 
-function resultsTemplate(model) {
+function resultsTemplate(model, title) {
+  if (model == null) {
+    text = 0.0;
+  } else {
+    text = model;
+  }
   return `
-  ${model.toString()}`;
+  <h3>${title}</h3>
+  ${text.toFixed(2).toString()} miles`;
 }
 
 function measureActions() {

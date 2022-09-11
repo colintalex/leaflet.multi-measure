@@ -80,6 +80,7 @@ L.Control.MultiMeasure = L.Control.extend({
   _clearAll: function () {
     this._layer.clearLayers();
     this._tempLayer.clearLayers().addTo(this._layer);
+    this._tempPoints.clearLayers().addTo(this._layer);
     this._layerHistory = [];
     this._handleEditControls();
   },
@@ -137,6 +138,11 @@ L.Control.MultiMeasure = L.Control.extend({
         this._measure_start_menu.setAttribute("style", "display:none;");
         this._outputs.removeAttribute("style");
         this._measure_actions.removeAttribute("style");
+        this._subcursor = L.circleMarker(this._map.getCenter()).addTo(
+          this._layer
+        );
+        this._subcursor.on("click", this._placeLinePoint, this);
+        this._map.on("mousemove", this._updateSubCursorPos, this);
         break;
     }
   },
@@ -185,21 +191,30 @@ L.Control.MultiMeasure = L.Control.extend({
   _placeLinePoint: function (evt) {
     if (!this._tempLine) {
       this._tempLine = new L.Polyline([evt.latlng]);
+    } else {
+      this._tempLine.addLatLng(evt.latlng);
     }
     if (!this._tempLayer.hasLayer(this._tempLine)) {
       this._tempLine.addTo(this._tempLayer);
     }
-    this._tempLine.addLatLng(evt.latlng);
     L.circleMarker(evt.latlng).addTo(this._tempPoints);
     var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
     if (line_parts.length > 1) {
       var line = turf.lineString(line_parts);
       var length = turf.length(line, { units: "miles" });
-      this._outputs.innerHTML = resultsTemplate(length);
-    }
+      console.log(this._measure_type);
+      if (this._measure_type == "start-area" && line_parts.length > 2) {
+        line_parts.push(line_parts[0]);
+        var polygon = turf.polygon([line_parts]);
+        var area = turf.area(polygon);
+        this._outputs.innerHTML = resultsTemplate(area, "Area");
 
-    // this._tempLine.addTo(this._tempLayer);
-    // this._tempLine.setLatLng(evt.latlng);
+        this._tempArea ||= L.polygon([], { color: "red" }).addTo(
+          this._tempLayer
+        );
+        this._tempArea.setLatLngs(this._tempLine.getLatLngs());
+      }
+    }
   },
   _saveMeasure: function () {
     switch (this._measure_type) {
@@ -216,14 +231,36 @@ L.Control.MultiMeasure = L.Control.extend({
         this._tempPoints.getLayers().forEach((lyr) => {
           L.circleMarker(lyr.getLatLng(), { color: "green" }).addTo(path);
         });
-
-        L.polyline(this._tempLine.getLatLngs(), { color: "green" }).addTo(path);
+        var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
+        var line = turf.lineString(line_parts);
+        var length = turf.length(line, { units: "miles" });
+        var polyline = L.polyline(this._tempLine.getLatLngs(), {
+          color: "green",
+        }).addTo(path);
         path.addTo(this._layer);
+        polyline.bindPopup(outputTemplate(length, "Length")).openPopup();
         this._layerHistory.push(path._leaflet_id);
         this._tempPoints.clearLayers();
         this._tempLine.setLatLngs([]);
+        this._outputs.innerHTML = resultsTemplate(null);
         break;
       case "start-area":
+        var path = L.featureGroup();
+        this._tempPoints.getLayers().forEach((lyr) => {
+          L.circleMarker(lyr.getLatLng(), { color: "green" }).addTo(path);
+        });
+        var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
+        var line = turf.lineString(line_parts);
+        var length = turf.length(line, { units: "miles" });
+        var polyline = L.polygon(this._tempLine.getLatLngs(), {
+          color: "green",
+        }).addTo(path);
+        path.addTo(this._layer);
+        polyline.bindPopup(outputTemplate(length, "Length")).openPopup();
+        this._layerHistory.push(path._leaflet_id);
+        this._tempPoints.clearLayers();
+        this._tempLine.setLatLngs([]);
+        this._outputs.innerHTML = resultsTemplate(null);
         break;
     }
   },
