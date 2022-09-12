@@ -16,15 +16,36 @@ function mainTemplate(model) {
   `;
 }
 
-function resultsTemplate(model, title) {
-  if (model == null) {
-    text = 0.0;
-  } else {
-    text = model;
-  }
+function areaStartTemplate() {
   return `
-  <h3>${title}</h3>
-  ${text.toFixed(2).toString()} miles`;
+  <h3>Area</h3>
+  <p>Place 3 or more points to measure area</p>`;
+}
+function areaResultsTemplate(area) {
+  return `
+  <h3>Area</h3>
+  ${area.toFixed(0)} sq/miles`;
+}
+
+function pointStartTemplate() {
+  return `
+  <h3>Point Measure</h3>
+  <p>Click on map to measure point.</p>`;
+}
+function pointResultsTemplate(coords = { lat: 0.0, lng: 0.0 }) {
+  return `
+  <h3>Point Measure</h3>
+  ${coords.lat.toFixed(5)} / ${coords.lng.toFixed(5)}`;
+}
+function lineStartTemplate() {
+  return `
+  <h3>Line Measure</h3>
+  <p>Place 2 or more points to measure</p>`;
+}
+function lineResultsTemplate(length) {
+  return `
+  <h3>Line Measure</h3>
+  ${length}`;
 }
 
 function measureActions() {
