@@ -24,9 +24,8 @@ function areaStartTemplate() {
 function areaResultsTemplate(area) {
   return `
   <h3>Area</h3>
-  ${area.toFixed(0)} sq/miles`;
+  ${area.toFixed(2)} sq/miles`;
 }
-
 function pointStartTemplate() {
   return `
   <h3>Point Measure</h3>
@@ -45,7 +44,7 @@ function lineStartTemplate() {
 function lineResultsTemplate(length) {
   return `
   <h3>Line Measure</h3>
-  ${length}`;
+  ${length.toFixed(2)} miles`;
 }
 
 function measureActions() {

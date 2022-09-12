@@ -85,6 +85,11 @@ L.Control.MultiMeasure = L.Control.extend({
     this._layer.clearLayers();
     this._tempLayer.clearLayers().addTo(this._layer);
     this._tempPoints.clearLayers().addTo(this._layer);
+    this._tempLayer.clearLayers();
+    this._tempArea.addTo(this._tempLayer);
+    this._tempLine.setLatLngs([]);
+    this._tempArea.setLatLngs([]);
+    this._subcursor.addTo(this._tempLayer);
     this._layerHistory = [];
     this._handleEditControls();
   },
@@ -119,6 +124,8 @@ L.Control.MultiMeasure = L.Control.extend({
     this._measure_actions.setAttribute("style", "display:none;");
     this._measure_start_menu.removeAttribute("style");
   },
+  _showSave: function () {},
+  _hideSave: function () {},
   _measure: function (evt) {
     this._measure_type = evt.target.id;
     this._enableMeasureView();
@@ -162,6 +169,9 @@ L.Control.MultiMeasure = L.Control.extend({
     this._subcursor.off("click", this._placeLinePoint, this);
     this._map.off("mousemove", this._updateSubCursorPos, this);
     this._tempLayer.clearLayers();
+    this._tempArea.addTo(this._tempLayer);
+    this._tempLine.setLatLngs([]);
+    this._tempArea.setLatLngs([]);
     this._subcursor.addTo(this._tempLayer);
     this._tempPoints.clearLayers();
   },
@@ -177,7 +187,9 @@ L.Control.MultiMeasure = L.Control.extend({
   },
   _placeMarker: function (evt) {
     if (!this._tempMarker) {
-      this._tempMarker = new L.CircleMarker(evt.latlng).addTo(this._tempLayer);
+      this._tempMarker = new L.CircleMarker(evt.latlng, { radius: 6 }).addTo(
+        this._tempLayer
+      );
     }
     this._tempMarker.addTo(this._tempLayer);
     this._tempMarker.setLatLng(evt.latlng);
@@ -186,7 +198,7 @@ L.Control.MultiMeasure = L.Control.extend({
     this._outputs.innerHTML = pointResultsTemplate(evt.latlng);
   },
   _placeLinePoint: function (evt) {
-    L.circleMarker(evt.latlng).addTo(this._tempPoints);
+    L.circleMarker(evt.latlng, { radius: 6 }).addTo(this._tempPoints);
     if (!this._tempLine) {
       this._tempLine = new L.Polyline([evt.latlng]);
     } else {
@@ -206,15 +218,17 @@ L.Control.MultiMeasure = L.Control.extend({
     if (this._measure_type == "start-area" && line_parts.length > 2) {
       var temp_parts = line_parts;
       temp_parts.push(temp_parts[0]);
-      console.log(line_parts);
       var polygon = turf.polygon([temp_parts]);
       var area = turf.area(polygon);
       var miles = area / 2589988.11;
       this._outputs.innerHTML = areaResultsTemplate(miles);
 
-      this._tempArea ||= L.polygon([], { color: "blue", stroke: false }).addTo(
-        this._tempLayer
-      );
+      if (this._tempArea == undefined) {
+        this._tempArea = L.polygon(line_parts, {
+          color: "blue",
+          stroke: false,
+        }).addTo(this._tempLayer);
+      }
       this._tempArea.setLatLngs(this._tempLine.getLatLngs());
     }
   },
@@ -225,6 +239,7 @@ L.Control.MultiMeasure = L.Control.extend({
         var marker = L.circleMarker(coords, { color: "green" }).addTo(
           this._layer
         );
+        marker.bindPopup(pointOutputTemplate(coords)).openPopup();
         this._layerHistory.push(marker._leaflet_id);
         this._tempLayer.clearLayers();
         this._subcursor.addTo(this._tempLayer);
@@ -254,14 +269,9 @@ L.Control.MultiMeasure = L.Control.extend({
           L.circleMarker(lyr.getLatLng(), { color: "green" }).addTo(path);
         });
         var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
-        var temp_parts = line_parts;
-        console.log(line_parts);
-
-        temp_parts.push(temp_parts[0]);
-        var poly_parts = turf.polygon([temp_parts]);
-        var area = turf.area(poly_parts);
-        var miles = area / 2589988.11;
-        this._outputs.innerHTML = areaStartTemplate(miles);
+        line_parts.push(line_parts[0]);
+        var area = turf.area(turf.polygon([line_parts])) / 2589988.11;
+        this._outputs.innerHTML = areaStartTemplate(area);
 
         var polyline = L.polygon(this._tempLine.getLatLngs(), {
           color: "green",
