@@ -5,6 +5,7 @@ function mainTemplate(model) {
       ${rulerIcon()}
     </a>
     <div class='leaflet-multi-measure-controls'>
+      ${closeIcon()}
       <h3 class="heading">2D Measure Tool</h3>
         ${startMenu()}
       <div class="measure-output">
@@ -18,39 +19,39 @@ function mainTemplate(model) {
 
 function areaStartTemplate() {
   return `
-  <h3>Area</h3>
+  <h6>Area</h6>
   <p>Place 3 or more points to measure area</p>`;
 }
 function areaResultsTemplate(area) {
   return `
-  <h3>Area</h3>
+  <h6>Area</h6>
   ${area.toFixed(2)} sq/miles`;
 }
 function pointStartTemplate() {
   return `
-  <h3>Point Measure</h3>
-  <p>Click on map to measure point.</p>`;
+  <h6>Point</h6>
+  <p>Click map to measure point.</p>`;
 }
 function pointResultsTemplate(coords = { lat: 0.0, lng: 0.0 }) {
   return `
-  <h3>Point Measure</h3>
+  <h6>Point</h6>
   ${coords.lat.toFixed(5)} / ${coords.lng.toFixed(5)}`;
 }
 function lineStartTemplate() {
   return `
-  <h3>Line Measure</h3>
+  <h6>Line</h6>
   <p>Place 2 or more points to measure</p>`;
 }
 function lineResultsTemplate(length) {
   return `
-  <h3>Line Measure</h3>
+  <h6>Line</h6>
   ${length.toFixed(2)} miles`;
 }
 
 function measureActions() {
   return `
     <ul>
-      <li id='save' class='link'>
+      <li id='save' class='link measure-hidden'>
         Save Measurement
       </li>
       <li id='cancel' class='link'>
@@ -197,7 +198,7 @@ function lineIcon() {
 
 function closeIcon() {
   return `
-  <svg class='leaflet-measure-menu-icon' version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+  <svg class='leaflet-measure-menu-icon' id='close-icon' version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
     width="100px" height="100px" viewBox="0 0 100 100" enable-background="new 0 0 100 100" xml:space="preserve">
   <path d="M84.707,68.752L65.951,49.998l18.75-18.752c0.777-0.777,0.777-2.036,0-2.813L71.566,15.295
     c-0.777-0.777-2.037-0.777-2.814,0L49.999,34.047l-18.75-18.752c-0.746-0.747-2.067-0.747-2.814,0L15.297,28.431

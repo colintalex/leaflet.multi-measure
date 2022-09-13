@@ -16,6 +16,10 @@ L.Control.MultiMeasure = L.Control.extend({
     this._layer = L.featureGroup().addTo(this._map);
     this._tempLayer = L.featureGroup().addTo(this._layer);
     this._tempPoints = L.featureGroup().addTo(this._layer);
+    this._tempArea = L.polygon([], { color: "blue", stroke: false }).addTo(
+      this._tempLayer
+    );
+    this._tempLine = L.polyline([]).addTo(this._tempLayer);
     this._subcursor = L.circleMarker(map.getCenter(), {
       color: "transparent",
     }).addTo(this._tempLayer);
@@ -39,6 +43,8 @@ L.Control.MultiMeasure = L.Control.extend({
     const delete_all = container.querySelector(".link#delete-all");
     const undo = container.querySelector(".link#undo-last");
     const save = container.querySelector(".link#save");
+    const close = container.querySelector("#close-icon");
+    this._save = save;
     this._edit_controls = container.querySelectorAll(".link.existing");
     const controls = container.querySelector(".leaflet-multi-measure-controls");
     const outputs = container.querySelector(".measure-output");
@@ -50,13 +56,28 @@ L.Control.MultiMeasure = L.Control.extend({
     this._outputs = outputs;
     this._measure_start_menu = measure_start_menu;
     this._measure_actions = measure_actions;
-
     this._collapse();
+
+    L.DomEvent.on(container, "mouseover", L.DomEvent.stop);
+    L.DomEvent.on(container, "mouseover", function (e) {
+      if (this._subcursor) {
+        this._subcursor.off("click mousemove");
+      }
+    });
+    L.DomEvent.on(container, "mouseout", function (e) {
+      let type = this._measure_type;
+      if (type == "start-point") {
+        this._subcursor.on("click", this._placeMarker, this);
+      }
+      if (type == "start-line" || type == "start-area") {
+        this._subcursor.on("click", this._placeMarker, this);
+      }
+    });
 
     L.DomEvent.on(toggle, "click", L.DomEvent.stop);
     L.DomEvent.on(toggle, "click", this._expand, this);
-    L.DomEvent.on(controls, "click", L.DomEvent.stop);
-    L.DomEvent.on(controls, "click", this._collapse, this);
+    L.DomEvent.on(close, "click", L.DomEvent.stop);
+    L.DomEvent.on(close, "click", this._collapse, this);
     L.DomEvent.on(pointStart, "click", L.DomEvent.stop);
     L.DomEvent.on(pointStart, "click", this._measure, this);
     L.DomEvent.on(lineStart, "click", L.DomEvent.stop);
@@ -72,19 +93,37 @@ L.Control.MultiMeasure = L.Control.extend({
     L.DomEvent.on(delete_all, "click", this._clearAll, this);
     L.DomEvent.on(undo, "click", L.DomEvent.stop);
     L.DomEvent.on(undo, "click", this._undoLast, this);
+    L.DomEvent.on(undo, "mouseover", this._highlightLast, this);
+    L.DomEvent.on(undo, "mouseout", this._unHighlightLast, this);
 
     return this._container;
+  },
+  _unHighlightLast: function () {
+    let last_layer = this._layerHistory[this._layerHistory.length - 1];
+    if (last_layer == undefined) return;
+
+    if (this._layer.hasLayer(last_layer)) {
+      this._layer.getLayer(last_layer).setStyle({ color: "green" });
+    }
+  },
+  _highlightLast: function () {
+    let last_layer = this._layerHistory[this._layerHistory.length - 1];
+    if (last_layer == undefined) return;
+    if (this._layer.hasLayer(last_layer)) {
+      this._layer.getLayer(last_layer).setStyle({ color: "red" });
+    }
   },
   _undoLast: function () {
     var length = this._layerHistory.length - 1;
     this._layer.removeLayer(this._layerHistory[length]);
     this._layerHistory.pop();
     this._handleEditControls();
+    this._highlightLast();
   },
   _clearAll: function () {
     this._layer.clearLayers();
-    this._tempLayer.clearLayers().addTo(this._layer);
-    this._tempPoints.clearLayers().addTo(this._layer);
+    this._tempLayer.addTo(this._layer).clearLayers();
+    this._tempPoints.addTo(this._layer).clearLayers();
     this._tempLayer.clearLayers();
     this._tempArea.addTo(this._tempLayer);
     this._tempLine.setLatLngs([]);
@@ -97,61 +136,61 @@ L.Control.MultiMeasure = L.Control.extend({
     this._map.removeLayer(this._layer);
   },
   _expand: function () {
-    // hide svg
-    // show controls
-    this._toggle.setAttribute("style", "display:none;");
-    this._controls.removeAttribute("style");
-    this._outputs.setAttribute("style", "display:none;");
-    this._measure_actions.setAttribute("style", "display:none;");
+    this._toggle.classList.add("measure-hidden");
+    this._controls.classList.remove("measure-hidden");
+    this._outputs.classList.add("measure-hidden");
+    this._measure_actions.classList.add("measure-hidden");
 
     this._handleEditControls();
   },
   _handleEditControls: function () {
     if (this._layerHistory.length < 1) {
       this._edit_controls.forEach(function (ele) {
-        ele.setAttribute("style", "display:none;");
+        ele.classList.add("measure-hidden");
       });
     } else {
       this._edit_controls.forEach(function (ele) {
-        ele.removeAttribute("style");
+        ele.classList.remove("measure-hidden");
       });
     }
   },
   _collapse: function () {
-    this._toggle.removeAttribute("style");
-    this._controls.setAttribute("style", "display:none;");
-    this._outputs.setAttribute("style", "display:none;");
-    this._measure_actions.setAttribute("style", "display:none;");
-    this._measure_start_menu.removeAttribute("style");
+    this._toggle.classList.remove("measure-hidden");
+    this._controls.classList.add("measure-hidden");
+    this._outputs.classList.add("measure-hidden");
+    this._measure_actions.classList.add("measure-hidden");
+    this._measure_start_menu.classList.remove("measure-hidden");
+    this._tempLayer.remove(this._subcursor);
   },
-  _showSave: function () {},
-  _hideSave: function () {},
   _measure: function (evt) {
     this._measure_type = evt.target.id;
+    this._subcursor.addTo(map);
+    this._tempLayer.addTo(this._map);
+    L.DomEvent.off(this._container, "click", this._collapse, this);
     this._enableMeasureView();
   },
   _enableMeasureView: function () {
     switch (this._measure_type) {
       case "start-point":
-        this._measure_start_menu.setAttribute("style", "display:none;");
-        this._outputs.removeAttribute("style");
-        this._measure_actions.removeAttribute("style");
+        this._measure_start_menu.classList.add("measure-hidden");
+        this._outputs.classList.remove("measure-hidden");
+        this._measure_actions.classList.remove("measure-hidden");
         this._subcursor.on("click", this._placeMarker, this);
         this._map.on("mousemove", this._updateSubCursorPos, this);
         this._outputs.innerHTML = pointStartTemplate();
         break;
       case "start-line":
-        this._measure_start_menu.setAttribute("style", "display:none;");
-        this._outputs.removeAttribute("style");
-        this._measure_actions.removeAttribute("style");
+        this._measure_start_menu.classList.add("measure-hidden");
+        this._outputs.classList.remove("measure-hidden");
+        this._measure_actions.classList.remove("measure-hidden");
         this._subcursor.on("click", this._placeLinePoint, this);
         this._map.on("mousemove", this._updateSubCursorPos, this);
         this._outputs.innerHTML = lineStartTemplate();
         break;
       case "start-area":
-        this._measure_start_menu.setAttribute("style", "display:none;");
-        this._outputs.removeAttribute("style");
-        this._measure_actions.removeAttribute("style");
+        this._measure_start_menu.classList.add("measure-hidden");
+        this._outputs.classList.remove("measure-hidden");
+        this._measure_actions.classList.remove("measure-hidden");
         this._subcursor.on("click", this._placeLinePoint, this);
         this._map.on("mousemove", this._updateSubCursorPos, this);
         this._outputs.innerHTML = areaStartTemplate();
@@ -160,9 +199,9 @@ L.Control.MultiMeasure = L.Control.extend({
   },
   _backToMenu: function () {
     this._controls.removeAttribute("style");
-    this._measure_start_menu.removeAttribute("style");
-    this._measure_actions.setAttribute("style", "display:none;");
-    this._outputs.setAttribute("style", "display:none;");
+    this._measure_start_menu.classList.remove("measure-hidden");
+    this._measure_actions.classList.add("measure-hidden");
+    this._outputs.classList.add("measure-hidden");
     this._handleEditControls();
 
     this._subcursor.off("click", this._placeMarker, this);
@@ -174,16 +213,22 @@ L.Control.MultiMeasure = L.Control.extend({
     this._tempArea.setLatLngs([]);
     this._subcursor.addTo(this._tempLayer);
     this._tempPoints.clearLayers();
+    this._subcursor.off("click");
+    this._map.off("mousemove", this._updateSubCursorPos, this);
+    L.DomEvent.on(this._container, "click", this._collapse, this);
+    this._save.classList.add("measure-hidden");
   },
-  _startPoint: function () {},
   _updateSubCursorPos: function (evt) {
     if (!this._subcursor) {
       this._subcursor = L.circleMarker(evt.latlng, { opacity: 1.0 }).addTo(
         this._tempLayer
       );
-    } else {
-      this._subcursor.setLatLng(evt.latlng);
     }
+    if (!this._tempLayer.hasLayer(this._subcursor)) {
+      this._subcursor.addTo(this._tempLayer);
+    }
+    this._subcursor.setLatLng(evt.latlng);
+    this._subcursor.setStyle({ color: "blue", radius: 6 });
   },
   _placeMarker: function (evt) {
     if (!this._tempMarker) {
@@ -193,7 +238,7 @@ L.Control.MultiMeasure = L.Control.extend({
     }
     this._tempMarker.addTo(this._tempLayer);
     this._tempMarker.setLatLng(evt.latlng);
-
+    this._save.classList.remove("measure-hidden");
     // Update Output Template
     this._outputs.innerHTML = pointResultsTemplate(evt.latlng);
   },
@@ -209,10 +254,10 @@ L.Control.MultiMeasure = L.Control.extend({
       this._tempLine.addTo(this._tempLayer);
     }
     var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
-
     if (this._measure_type == "start-line" && line_parts.length > 1) {
       var line = turf.lineString(line_parts);
       var length = turf.length(line, { units: "miles" });
+      this._save.classList.remove("measure-hidden");
       this._outputs.innerHTML = lineResultsTemplate(length);
     }
     if (this._measure_type == "start-area" && line_parts.length > 2) {
@@ -221,11 +266,11 @@ L.Control.MultiMeasure = L.Control.extend({
       var polygon = turf.polygon([temp_parts]);
       var area = turf.area(polygon);
       var miles = area / 2589988.11;
+      this._save.classList.remove("measure-hidden");
       this._outputs.innerHTML = areaResultsTemplate(miles);
-
       if (this._tempArea == undefined) {
         this._tempArea = L.polygon(line_parts, {
-          color: "blue",
+          color: "red",
           stroke: false,
         }).addTo(this._tempLayer);
       }
@@ -233,12 +278,15 @@ L.Control.MultiMeasure = L.Control.extend({
     }
   },
   _saveMeasure: function () {
+    this._save.classList.add("measure-hidden");
+
     switch (this._measure_type) {
       case "start-point":
         var coords = this._tempMarker.getLatLng();
-        var marker = L.circleMarker(coords, { color: "green" }).addTo(
-          this._layer
-        );
+        var marker = L.circleMarker(coords, {
+          color: "green",
+          radius: 6,
+        }).addTo(this._layer);
         marker.bindPopup(pointOutputTemplate(coords)).openPopup();
         this._layerHistory.push(marker._leaflet_id);
         this._tempLayer.clearLayers();
@@ -248,7 +296,9 @@ L.Control.MultiMeasure = L.Control.extend({
       case "start-line":
         var path = L.featureGroup();
         this._tempPoints.getLayers().forEach((lyr) => {
-          L.circleMarker(lyr.getLatLng(), { color: "green" }).addTo(path);
+          L.circleMarker(lyr.getLatLng(), { color: "green", radius: 6 }).addTo(
+            path
+          );
         });
         var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
         var line = turf.lineString(line_parts);
@@ -266,7 +316,9 @@ L.Control.MultiMeasure = L.Control.extend({
       case "start-area":
         var path = L.featureGroup();
         this._tempPoints.getLayers().forEach((lyr) => {
-          L.circleMarker(lyr.getLatLng(), { color: "green" }).addTo(path);
+          L.circleMarker(lyr.getLatLng(), { color: "green", radius: 6 }).addTo(
+            path
+          );
         });
         var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
         line_parts.push(line_parts[0]);

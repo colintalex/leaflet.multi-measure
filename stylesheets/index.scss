@@ -2,11 +2,27 @@
   background-color: #fff;
   cursor: grab;
 
+  .measure-hidden {
+    display: none !important;
+  }
 
   .leaflet-measure-menu-icon {
     height: 22px;
     width: 22px;
     fill: black;
+
+    &#close-icon {
+      height: 14px;
+      width: 14px;
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      fill: gray;
+
+      &:hover {
+        cursor: pointer;
+      }
+    }
   }
 
   ul {
@@ -43,7 +59,7 @@
     h3.heading {
       font-size: 18px;
       border-bottom: 1px solid lightgray;
-      margin: 1px 8px 10px 9px;
+      margin: 6px 8px 10px 9px;
     }
 
     .measure-start-menu {
