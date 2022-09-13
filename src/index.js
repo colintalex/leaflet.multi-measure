@@ -277,7 +277,7 @@ L.Control.MultiMeasure = L.Control.extend({
     if (this._measure_type == "start-line" && line_parts.length > 1) {
       var line = turf.lineString(line_parts);
       var length = turf.length(line, { units: "miles" });
-      var secondary = turf.length(line, { units: "feet" });
+      var secondary = turf.length(line, { units: "meters" });
       this._save.classList.remove("measure-hidden");
       this._outputs.innerHTML = lineResultsTemplate(length, secondary);
     }
@@ -324,11 +324,12 @@ L.Control.MultiMeasure = L.Control.extend({
         var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
         var line = turf.lineString(line_parts);
         var length = turf.length(line, { units: "miles" });
+        var meters = turf.length(line, { units: "meters" });
         var polyline = L.polyline(this._tempLine.getLatLngs(), {
           color: "green",
         }).addTo(path);
         path.addTo(this._layer);
-        polyline.bindPopup(outputTemplate(length, "Length")).openPopup();
+        polyline.bindPopup(lengthOutputTemplate(length, meters)).openPopup();
         this._layerHistory.push(path._leaflet_id);
         this._tempPoints.clearLayers();
         this._tempLine.setLatLngs([]);
@@ -343,14 +344,15 @@ L.Control.MultiMeasure = L.Control.extend({
         });
         var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
         line_parts.push(line_parts[0]);
-        var area = turf.area(turf.polygon([line_parts])) / 2589988.11;
-        this._outputs.innerHTML = areaStartTemplate(area);
+        var area = turf.area(turf.polygon([line_parts]));
+        const miles = area / 2589988.11;
+        this._outputs.innerHTML = areaStartTemplate();
 
         var polyline = L.polygon(this._tempLine.getLatLngs(), {
           color: "green",
         }).addTo(path);
         path.addTo(this._layer);
-        polyline.bindPopup(areaOutputTemplate(area)).openPopup();
+        polyline.bindPopup(areaOutputTemplate(miles, area)).openPopup();
         this._layerHistory.push(path._leaflet_id);
         this._tempPoints.clearLayers();
         this._tempLine.setLatLngs([]);

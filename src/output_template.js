@@ -8,28 +8,30 @@ function outputTemplate(model, title) {
   return `
   <div>
     <h3>${title}</h3>
-    <h6>${text.toFixed(2)} miles</h6>
+    <p>${text.toFixed(2)} miles</p>
   </div>`;
 }
 function pointOutputTemplate(coords) {
   return `
   <div>
     <h3>Length</h3>
-    <h6>${coords.lat.toFixed(5)} / ${coords.lng.toFixed(5)}</h6>
+    <p>${coords.lat.toFixed(5)} / ${coords.lng.toFixed(5)}</p>
   </div>`;
 }
-function lengthOutputTemplate(length) {
+function lengthOutputTemplate(length, secondary) {
   return `
   <div>
     <h3>Length</h3>
-    <h6>${length.toFixed(2)} sq/miles</h6>
+    <p>${length.toFixed(2)} miles</p>
+    <p>${secondary} meters</p>
   </div>`;
 }
-function areaOutputTemplate(area) {
+function areaOutputTemplate(area, secondary = "") {
   return `
   <div>
     <h3>Area</h3>
-    <h6>${area.toFixed(2)} sq/miles</h6>
+    <p>${area.toFixed(2)} sq/miles</p>
+    <p>${secondary} sq/meters</p>
   </div>`;
 }
 

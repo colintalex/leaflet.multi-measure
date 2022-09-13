@@ -66,7 +66,7 @@ function measureActions() {
         Undo Last Point
       </li>
       <li id='cancel' class='link'>
-        Cancel This Measure
+        Back To Menu
       </li>
     </ul>`;
 }
