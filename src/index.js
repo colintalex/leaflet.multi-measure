@@ -24,6 +24,7 @@ L.Control.MultiMeasure = L.Control.extend({
       color: "transparent",
     }).addTo(this._tempLayer);
     this._layerHistory = [];
+    this._pointsHistory = [];
 
     const container = (this._container = L.DomUtil.create(
       "div",
@@ -46,11 +47,13 @@ L.Control.MultiMeasure = L.Control.extend({
     const close = container.querySelector("#close-icon");
     this._save = save;
     this._edit_controls = container.querySelectorAll(".link.existing");
+    this._undo_point = container.querySelector(".link#undo-point");
     const controls = container.querySelector(".leaflet-multi-measure-controls");
     const outputs = container.querySelector(".measure-output");
     const measure_start_menu = controls.querySelector(".measure-start-menu");
     const measure_actions = controls.querySelector(".measure-actions");
     this._toggle = toggle;
+    this._close = close;
     this._cancel = cancel;
     this._controls = controls;
     this._outputs = outputs;
@@ -61,7 +64,7 @@ L.Control.MultiMeasure = L.Control.extend({
     L.DomEvent.on(container, "mouseover", L.DomEvent.stop);
     L.DomEvent.on(container, "mouseover", function (e) {
       if (this._subcursor) {
-        this._subcursor.off("click mousemove");
+        this._subcursor.off("click");
       }
     });
     L.DomEvent.on(container, "mouseout", function (e) {
@@ -95,6 +98,7 @@ L.Control.MultiMeasure = L.Control.extend({
     L.DomEvent.on(undo, "click", this._undoLast, this);
     L.DomEvent.on(undo, "mouseover", this._highlightLast, this);
     L.DomEvent.on(undo, "mouseout", this._unHighlightLast, this);
+    L.DomEvent.on(this._undo_point, "click", this._removeLastPoint, this);
 
     return this._container;
   },
@@ -166,7 +170,8 @@ L.Control.MultiMeasure = L.Control.extend({
     this._measure_type = evt.target.id;
     this._subcursor.addTo(map);
     this._tempLayer.addTo(this._map);
-    L.DomEvent.off(this._container, "click", this._collapse, this);
+    L.DomEvent.off(this._close, "click", this._collapse, this);
+
     this._enableMeasureView();
   },
   _enableMeasureView: function () {
@@ -215,7 +220,7 @@ L.Control.MultiMeasure = L.Control.extend({
     this._tempPoints.clearLayers();
     this._subcursor.off("click");
     this._map.off("mousemove", this._updateSubCursorPos, this);
-    L.DomEvent.on(this._container, "click", this._collapse, this);
+    L.DomEvent.on(this._close, "click", this._collapse, this);
     this._save.classList.add("measure-hidden");
   },
   _updateSubCursorPos: function (evt) {
@@ -242,8 +247,23 @@ L.Control.MultiMeasure = L.Control.extend({
     // Update Output Template
     this._outputs.innerHTML = pointResultsTemplate(evt.latlng);
   },
+  _removeLastPoint: function () {
+    this._tempPoints.removeLayer(this._pointsHistory.pop());
+    let coords = this._tempLine.getLatLngs();
+    coords.pop();
+    this._tempLine.setLatLngs(coords);
+    if (this._measure_type == "start-area") {
+      this._tempArea.setLatLngs(coords);
+    }
+  },
   _placeLinePoint: function (evt) {
-    L.circleMarker(evt.latlng, { radius: 6 }).addTo(this._tempPoints);
+    const marker = L.circleMarker(evt.latlng, { radius: 6 });
+    marker.addTo(this._tempPoints);
+
+    this._pointsHistory.push(marker._leaflet_id);
+    if (this._pointsHistory.length > 0) {
+      this._undo_point.classList.remove("measure-hidden");
+    }
     if (!this._tempLine) {
       this._tempLine = new L.Polyline([evt.latlng]);
     } else {
@@ -257,8 +277,9 @@ L.Control.MultiMeasure = L.Control.extend({
     if (this._measure_type == "start-line" && line_parts.length > 1) {
       var line = turf.lineString(line_parts);
       var length = turf.length(line, { units: "miles" });
+      var secondary = turf.length(line, { units: "feet" });
       this._save.classList.remove("measure-hidden");
-      this._outputs.innerHTML = lineResultsTemplate(length);
+      this._outputs.innerHTML = lineResultsTemplate(length, secondary);
     }
     if (this._measure_type == "start-area" && line_parts.length > 2) {
       var temp_parts = line_parts;
@@ -267,7 +288,7 @@ L.Control.MultiMeasure = L.Control.extend({
       var area = turf.area(polygon);
       var miles = area / 2589988.11;
       this._save.classList.remove("measure-hidden");
-      this._outputs.innerHTML = areaResultsTemplate(miles);
+      this._outputs.innerHTML = areaResultsTemplate(miles, area);
       if (this._tempArea == undefined) {
         this._tempArea = L.polygon(line_parts, {
           color: "red",
@@ -335,6 +356,8 @@ L.Control.MultiMeasure = L.Control.extend({
         this._tempLine.setLatLngs([]);
         break;
     }
+    L.DomEvent.on(this._close, "click", this._collapse, this);
+    this._undo_point.classList.add("measure-hidden");
   },
 });
 

@@ -7,16 +7,16 @@
   }
 
   .leaflet-measure-menu-icon {
-    height: 22px;
-    width: 22px;
+    height: 18px;
+    width: 18px;
     fill: black;
 
     &#close-icon {
       height: 14px;
       width: 14px;
       position: absolute;
-      top: 4px;
-      right: 4px;
+      top: 6px;
+      right: 6px;
       fill: gray;
 
       &:hover {
@@ -51,21 +51,48 @@
         fill: blueviolet;
       }
     }
+
+    &#save {
+      color: green;
+    }
   }
 
   .leaflet-multi-measure-controls {
     padding: 10px 5px;
+    width: 175px;
 
     h3.heading {
       font-size: 18px;
       border-bottom: 1px solid lightgray;
-      margin: 6px 8px 10px 9px;
+      margin: 0px 8px 10px 9px;
     }
 
     .measure-start-menu {
       font-size: 20px;
       // border-top: 1px solid lightgray;
       margin: 1px 8px 0px 9px;
+    }
+
+    .measure-output {
+      padding-left: 10px;
+
+      .measure-title {
+        color: gray !important;
+        font-size: 13px;
+        border-bottom: 1px solid gray;
+        margin-bottom: 10px;
+      }
+
+      .measure-results {
+        font-size: 14px;
+        width: 100%;
+        text-align: center;
+      }
+    }
+
+    .measure-actions {
+      padding-top: 10px;
+      padding-left: 10px;
     }
   }
 }
