@@ -19,23 +19,27 @@ function pointOutputTemplate(coords) {
   </div>`;
 }
 function lengthOutputTemplate(length, secondary) {
+  var commas = secondary.toLocaleString("en-US");
+
   return `
   <div>
     <h3>Length</h3>
     <p>${length.toFixed(2)} miles</p>
-    <p>${secondary} meters</p>
+    <p>${commas} meters</p>
   </div>`;
 }
-function areaOutputTemplate(area, secondary = "") {
+function areaOutputTemplate(area, secondary) {
+  var commas = secondary.toLocaleString("en-US");
+
   return `
   <div>
     <h3>Area</h3>
     <p>${area.toFixed(2)} sq/miles</p>
-    <p>${secondary} sq/meters</p>
+    <p>${commas} sq/meters</p>
   </div>`;
 }
 
-units = {
+const units = {
   acres: {
     factor: 0.00024711,
     display: "acres",

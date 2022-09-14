@@ -87,6 +87,23 @@
         font-size: 14px;
         width: 100%;
         text-align: center;
+        margin-bottom: 3px;
+
+        &.primary {
+          border-bottom: 1px solid lightgray;
+          padding-bottom: 3px;
+        }
+
+        &.last-point {
+          font-size: 12px;
+        }
+
+        &.last-point-title {
+          font-size: 12px;
+          border-bottom: none;
+          text-align: start;
+          color: gray;
+        }
       }
     }
 

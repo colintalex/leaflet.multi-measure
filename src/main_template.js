@@ -8,6 +8,8 @@ function mainTemplate(model) {
       ${closeIcon()}
       <h3 class="heading">2D Measure</h3>
         ${startMenu()}
+      <div class="measure-last-point">
+      </div>
       <div class="measure-output">
       </div>
       <div class="measure-actions">
@@ -22,11 +24,13 @@ function areaStartTemplate() {
   <p class='measure-title'>Area</p>
   <p>Place 3 or more points</p>`;
 }
-function areaResultsTemplate(area, secondary = "secondary units") {
+function areaResultsTemplate(area, secondary, last_point) {
+  var commas = secondary.toLocaleString("en-US");
+
   return `
   <p class='measure-title'>Area</p>
-  <p class='measure-results'>${area.toFixed(2)} sq/miles</p>
-  <p class='measure-results secondary'>${secondary}</p>`;
+  <p class='measure-results primary'>${area.toFixed(2)} sq/miles</p>
+  <p class='measure-results secondary'>${commas} sq/meters</p>`;
 }
 function pointStartTemplate() {
   return `
@@ -38,11 +42,10 @@ function pointResultsTemplate(
   secondary = "secondary units"
 ) {
   return `
-  <p class='measure-title'>Point</p>
-  <p class='measure-results'>${coords.lat.toFixed(5)} / ${coords.lng.toFixed(
-    5
-  )}</>
-  <p class='measure-results secondary'>${secondary}</>`;
+  <p class='measure-title primary'>Point</p>
+  <p class='measure-results primary'>
+  ${coords.lat.toFixed(5)} / ${coords.lng.toFixed(5)}</p>
+  <p class='measure-results secondary'>${secondary}</p>`;
 }
 function lineStartTemplate() {
   return `
@@ -50,10 +53,20 @@ function lineStartTemplate() {
   <p>Place 2 or more points</p>`;
 }
 function lineResultsTemplate(length, secondary = "secondary units") {
+  var commas = secondary.toLocaleString("en-US");
   return `
+
   <p class='measure-title'>Line</p>
-  <p class='measure-results'>${length.toFixed(2)} miles</p>
-  <p class='measure-results secondary'>${secondary}</p>`;
+  <p class='measure-results primary'>${length.toFixed(2)} miles</p>
+  <p class='measure-results secondary'>${commas} meters</p>`;
+}
+
+function lastPointTemplate(last_point, secondary = "secondary units") {
+  return `
+    <p class='measure-results last-point-title'>Last Point</p>
+    <p class='measure-results primary last-point'>
+    ${last_point.lat.toFixed(5)} / ${last_point.lng.toFixed(5)}</p>
+    <p class='measure-results secondary last-point'>${secondary}</p>`;
 }
 
 function measureActions() {

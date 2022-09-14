@@ -13,6 +13,8 @@ L.Control.MultiMeasure = L.Control.extend({
   },
   onAdd: function (map) {
     this._map = map;
+    this._layerHistory = [];
+    this._pointsHistory = [];
     this._layer = L.featureGroup().addTo(this._map);
     this._tempLayer = L.featureGroup().addTo(this._layer);
     this._tempPoints = L.featureGroup().addTo(this._layer);
@@ -23,59 +25,49 @@ L.Control.MultiMeasure = L.Control.extend({
     this._subcursor = L.circleMarker(map.getCenter(), {
       color: "transparent",
     }).addTo(this._tempLayer);
-    this._layerHistory = [];
-    this._pointsHistory = [];
 
     const container = (this._container = L.DomUtil.create(
       "div",
       `${this._className} leaflet-bar`
     ));
     container.innerHTML = mainTemplate(this);
-
     L.DomEvent.disableClickPropagation(container);
     L.DomEvent.disableScrollPropagation(container);
 
     const pointStart = container.querySelector("#start-point");
     const lineStart = container.querySelector("#start-line");
     const areaStart = container.querySelector("#start-area");
-
     const toggle = container.querySelector(".measure-toggle");
     const cancel = container.querySelector(".link#cancel");
     const delete_all = container.querySelector(".link#delete-all");
     const undo = container.querySelector(".link#undo-last");
     const save = container.querySelector(".link#save");
     const close = container.querySelector("#close-icon");
-    this._save = save;
-    this._edit_controls = container.querySelectorAll(".link.existing");
-    this._undo_point = container.querySelector(".link#undo-point");
     const controls = container.querySelector(".leaflet-multi-measure-controls");
     const outputs = container.querySelector(".measure-output");
+    const last_point = container.querySelector(".measure-last-point");
     const measure_start_menu = controls.querySelector(".measure-start-menu");
     const measure_actions = controls.querySelector(".measure-actions");
-    this._toggle = toggle;
+    const edit_controls = container.querySelectorAll(".link.existing");
+    const undo_point = container.querySelector(".link#undo-point");
+    this._save = save;
     this._close = close;
     this._cancel = cancel;
-    this._controls = controls;
+    this._toggle = toggle;
     this._outputs = outputs;
-    this._measure_start_menu = measure_start_menu;
+    this._controls = controls;
+    this._undo_point = undo_point;
+    this._last_point = last_point;
+    this._edit_controls = edit_controls;
     this._measure_actions = measure_actions;
+    this._measure_start_menu = measure_start_menu;
+
     this._collapse();
 
-    L.DomEvent.on(container, "mouseover", L.DomEvent.stop);
-    L.DomEvent.on(container, "mouseover", function (e) {
-      if (this._subcursor) {
-        this._subcursor.off("click");
-      }
-    });
-    L.DomEvent.on(container, "mouseout", function (e) {
-      let type = this._measure_type;
-      if (type == "start-point") {
-        this._subcursor.on("click", this._placeMarker, this);
-      }
-      if (type == "start-line" || type == "start-area") {
-        this._subcursor.on("click", this._placeMarker, this);
-      }
-    });
+    // L.DomEvent.on(this._layer, "mouseover", L.DomEvent.stop);
+    L.DomEvent.on(this._map, "mouseover", this._enableSubCursor, this);
+    // L.DomEvent.on(this._map, "mouseout", L.DomEvent.stop);
+    L.DomEvent.on(this._map, "mouseout", this._disableSubCursor, this);
 
     L.DomEvent.on(toggle, "click", L.DomEvent.stop);
     L.DomEvent.on(toggle, "click", this._expand, this);
@@ -101,6 +93,14 @@ L.Control.MultiMeasure = L.Control.extend({
     L.DomEvent.on(this._undo_point, "click", this._removeLastPoint, this);
 
     return this._container;
+  },
+  _enableSubCursor: function () {
+    this._enabled = true;
+    this._subcursor.setStyle({ color: "green", radius: 4 });
+  },
+  _disableSubCursor: function () {
+    this._enabled = false;
+    this._subcursor.setStyle({ color: "transparent" });
   },
   _unHighlightLast: function () {
     let last_layer = this._layerHistory[this._layerHistory.length - 1];
@@ -168,20 +168,21 @@ L.Control.MultiMeasure = L.Control.extend({
   },
   _measure: function (evt) {
     this._measure_type = evt.target.id;
-    this._subcursor.addTo(map);
-    this._tempLayer.addTo(this._map);
+    this._subcursor.addTo(this._layer);
+    this._tempLayer.addTo(this._layer);
     L.DomEvent.off(this._close, "click", this._collapse, this);
+    this._map.on("mousemove", this._updateSubCursorPos, this);
 
     this._enableMeasureView();
   },
   _enableMeasureView: function () {
+    this._enabled = true;
     switch (this._measure_type) {
       case "start-point":
         this._measure_start_menu.classList.add("measure-hidden");
         this._outputs.classList.remove("measure-hidden");
         this._measure_actions.classList.remove("measure-hidden");
         this._subcursor.on("click", this._placeMarker, this);
-        this._map.on("mousemove", this._updateSubCursorPos, this);
         this._outputs.innerHTML = pointStartTemplate();
         break;
       case "start-line":
@@ -189,7 +190,6 @@ L.Control.MultiMeasure = L.Control.extend({
         this._outputs.classList.remove("measure-hidden");
         this._measure_actions.classList.remove("measure-hidden");
         this._subcursor.on("click", this._placeLinePoint, this);
-        this._map.on("mousemove", this._updateSubCursorPos, this);
         this._outputs.innerHTML = lineStartTemplate();
         break;
       case "start-area":
@@ -197,7 +197,6 @@ L.Control.MultiMeasure = L.Control.extend({
         this._outputs.classList.remove("measure-hidden");
         this._measure_actions.classList.remove("measure-hidden");
         this._subcursor.on("click", this._placeLinePoint, this);
-        this._map.on("mousemove", this._updateSubCursorPos, this);
         this._outputs.innerHTML = areaStartTemplate();
         break;
     }
@@ -224,16 +223,17 @@ L.Control.MultiMeasure = L.Control.extend({
     this._save.classList.add("measure-hidden");
   },
   _updateSubCursorPos: function (evt) {
-    if (!this._subcursor) {
-      this._subcursor = L.circleMarker(evt.latlng, { opacity: 1.0 }).addTo(
-        this._tempLayer
-      );
+    if (this._enabled == true) {
+      if (!this._subcursor) {
+        this._subcursor = L.circleMarker(evt.latlng, { opacity: 1.0 }).addTo(
+          this._tempLayer
+        );
+      }
+      this._subcursor.setLatLng(evt.latlng);
+      this._layer.on("mousemove", this._updateSubCursorPos, this);
+    } else {
+      this._layer.off("mousemove", this._updateSubCursorPos, this);
     }
-    if (!this._tempLayer.hasLayer(this._subcursor)) {
-      this._subcursor.addTo(this._tempLayer);
-    }
-    this._subcursor.setLatLng(evt.latlng);
-    this._subcursor.setStyle({ color: "blue", radius: 6 });
   },
   _placeMarker: function (evt) {
     if (!this._tempMarker) {
@@ -269,17 +269,22 @@ L.Control.MultiMeasure = L.Control.extend({
     } else {
       this._tempLine.addLatLng(evt.latlng);
     }
-
     if (!this._tempLayer.hasLayer(this._tempLine)) {
       this._tempLine.addTo(this._tempLayer);
     }
+    this._last_point.innerHTML = lastPointTemplate(marker.getLatLng());
+
     var line_parts = this._tempLine.toGeoJSON().geometry.coordinates;
     if (this._measure_type == "start-line" && line_parts.length > 1) {
       var line = turf.lineString(line_parts);
       var length = turf.length(line, { units: "miles" });
       var secondary = turf.length(line, { units: "meters" });
       this._save.classList.remove("measure-hidden");
-      this._outputs.innerHTML = lineResultsTemplate(length, secondary);
+      this._outputs.innerHTML = lineResultsTemplate(
+        length,
+        secondary,
+        marker.getLatLng()
+      );
     }
     if (this._measure_type == "start-area" && line_parts.length > 2) {
       var temp_parts = line_parts;
@@ -295,7 +300,9 @@ L.Control.MultiMeasure = L.Control.extend({
           stroke: false,
         }).addTo(this._tempLayer);
       }
-      this._tempArea.setLatLngs(this._tempLine.getLatLngs());
+      this._tempArea.setLatLngs(
+        this._tempLine.getLatLngs(this._getLastCoords())
+      );
     }
   },
   _saveMeasure: function () {
