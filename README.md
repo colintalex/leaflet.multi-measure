@@ -3,6 +3,8 @@
 
 Inspired by the original Leaflet Measure - https://github.com/ljagis/leaflet-measure
 
+![MultiMeasure Screenshot](./images/screenshot.png)
+
 Due to a lack of activty on the original measure repo and a personal curiousity, I rebuilt this plugin with certain enhancements:
 - Removes use of unsafe-eval
 - Breaks out Measurements into seperate Point/Line/Area
