@@ -3,6 +3,9 @@
 
 Inspired by the original Leaflet Measure - https://github.com/ljagis/leaflet-measure
 
+
+__In Progress, Needs Final Touchup and WriteUp__
+
 ![MultiMeasure Screenshot](./images/screenshot.png)
 
 Due to a lack of activty on the original measure repo and a personal curiousity, I rebuilt this plugin with certain enhancements:
